@@ -1,0 +1,22 @@
+{
+  "name": "gui",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-circular-progressbar": "^2.2.0",
+    "react-dom": "19.2.3",
+    "zustand": "^5.0.11"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "tailwindcss": "^4"
+  }
+}

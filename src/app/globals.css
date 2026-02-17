@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+:root {
+  /* Base / Background */
+  --background: #0F0F0F;       /* true dark black background */
+  --foreground: #FFFFFF;
+  --surface: #1A1A1A;          /* dark gray panels/cards */
+  --border: #2C2C2C;           /* subtle borders/dividers */
+
+  /* Text Colors */
+  --primary: #F5F5F5;          /* off-white for main text */
+  --secondary: #B0B0B0;        /* lighter gray for labels, secondary text */
+  --muted: #7A7A7A;            /* muted gray for placeholders or minor text */
+
+  /* Accent Colors */
+  --accent: #acada3;           /* very light gray / subtle highlight */
+  --accent-info: #31302e;      /* soft blue-gray for info elements */
+  --success: #4ADE80;          /* green for success states */
+  --warning: #FACC15;          /* yellow for warnings / alerts */
+
+  /* Hover / Active */
+  --hover-bg: #2A2A2A;         /* hover background for cards/buttons */
+  --active-bg: #3C3C3C;        /* pressed or active background */
+}
+
+@theme inline {
+  /* Map base theme variables */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-muted: var(--muted);
+
+  /* Accent / Status */
+  --color-accent: var(--accent);
+  --color-accent-info: var(--accent-info);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
+  /* Fonts */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-orbitron);
+}
+
+.section {
+  @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24;
+}
+
+.section-tight {
+  @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 lg:py-16;
+}
+
+.container {
+  @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
+.card {
+  @apply p-4 lg:p-6 rounded-lg;
+}
+
+.stack-8  { @apply space-y-2; }   /* 8px */
+.stack-16 { @apply space-y-4; }   /* 16px */
+.stack-24 { @apply space-y-6; }   /* 24px */
+.stack-32 { @apply space-y-8; }   /* 32px */
+
+.row-16 { @apply gap-4; }
+.row-24 { @apply gap-6; }
+.row-32 { @apply gap-8; }
+
+/* Chrome, Edge, Safari */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Firefox */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+/* IE/old Edge */
+.no-scrollbar {
+  -ms-overflow-style: none;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(150,150,150,0.3);
+  border-radius: 8px;
+}
