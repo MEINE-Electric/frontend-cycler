@@ -36,18 +36,23 @@ const null_data = {
   vmin: 0,
 }
 
+const null_status = {
+  state: "DISCONNECTED",
+  step: -1,
+}
+
 export const useChannelStore = create((set) => ({
   channels: {
-    11: { state: "DISCONNECTED", data: null_data, status: null },
-    12: { state: "DISCONNECTED", data: null_data, status: null },
-    21: { state: "DISCONNECTED", data: null_data, status: null },
-    22: { state: "DISCONNECTED", data: null_data, status: null },
-    31: { state: "DISCONNECTED", data: null_data, status: null },
-    32: { state: "DISCONNECTED", data: null_data, status: null },
-    41: { state: "DISCONNECTED", data: null_data, status: null },
-    42: { state: "DISCONNECTED", data: null_data, status: null },
-    51: { state: "DISCONNECTED", data: null_data, status: null },
-    52: { state: "DISCONNECTED", data: null_data, status: null },
+    11: { state: "DISCONNECTED", data: null_data, status: null_status},
+    12: { state: "DISCONNECTED", data: null_data, status: null_status },
+    21: { state: "DISCONNECTED", data: null_data, status: null_status },
+    22: { state: "DISCONNECTED", data: null_data, status: null_status },
+    31: { state: "DISCONNECTED", data: null_data, status: null_status },
+    32: { state: "DISCONNECTED", data: null_data, status: null_status },
+    41: { state: "DISCONNECTED", data: null_data, status: null_status },
+    42: { state: "DISCONNECTED", data: null_data, status: null_status },
+    51: { state: "DISCONNECTED", data: null_data, status: null_status },
+    52: { state: "DISCONNECTED", data: null_data, status: null_status },
   },
 
   setChannelValue: (id, value) =>
