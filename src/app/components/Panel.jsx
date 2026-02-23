@@ -10,6 +10,7 @@ const State = ({ state, label }) => {
     discharging: "bg-red-400",
     hold: "bg-yellow-400",
     rest: "bg-blue-400",
+    paused: "bg-orange-400", 
   };
 
   const color = map[state?.toLowerCase()] || "bg-stone-400";
@@ -35,6 +36,7 @@ const ProgressBar = ({ progress, state }) => {
         discharging: "bg-red-400",
         hold: "bg-yellow-400",
         rest: "bg-blue-400",
+        paused: "bg-orange-400",
     };
 
     const color = map[state?.toLowerCase()] || "bg-stone-400";
@@ -122,26 +124,26 @@ const Panel = ({ label }) => {
   const [starting, setStarting] = useState(false);
 
   useEffect(() => {
-    if (starting && (state === "CHARGING" || state === "DISCHARGING" || state === "HOLD" || state === "REST") ) {
+    if (starting && (state === "CHARGING" || state === "DISCHARGING" || state === "HOLD" || state === "REST" || state === "PAUSED") ) {
       setStarting(false);
     }
   }, [state, starting]);
   
 
   if (state === "DISCONNECTED" || state === undefined) {
-    // return (
-    //   <div className="bg-surface rounded-xl flex items-center justify-center aspect-square transition-all duration-100 ease-in-out">
-    //     <span className="text-muted">
-    //         Disconnected
-    //     </span>
-    //   </div>
-    //     )
+    return (
+      <div className="bg-surface rounded-xl flex items-center justify-center aspect-square transition-all duration-100 ease-in-out">
+        <span className="text-muted font-bold">
+            Disconnected
+        </span>
+      </div>
+        )
   };
 
   return (
     <div className="group relative bg-surface hover:bg-background border-transparent border hover:border-foreground transition-color duration-100 ease-in-out rounded-xl gap-2 aspect-square p-3 flex flex-col justify-between">
       <div className='pb-2'>
-          <State state={ (state === " DISCONNECTED" || state === undefined) ? "Disconnected" : state} label={label} />
+          <State state={ (state === "DISCONNECTED" || state === undefined) ? "Disconnected" : state} label={label} />
       </div>
       
       <div className="text-left flex flex-col gap-2 py-2 px-1">
@@ -230,26 +232,86 @@ const Panel = ({ label }) => {
         </div>
 
         {/* Pause */}
-        <div className='disabled py-2 px-2 hover:bg-[#ebc313]/30 cursor-not-allowed'>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="lucide lucide-pause active:scale-95" 
-          >
-            <rect x="14" y="3" width="5" height="18" rx="1" />
-            <rect x="5" y="3" width="5" height="18" rx="1" />
-          </svg>
-        </div>
+        {state != "PAUSED" && 
+          (
+            <div className='disabled py-2 px-2 hover:bg-[#ebc313]/30' 
+              onClick={
+                async () => {
+                  if(status.state === "running"){
+                    await fetch(`http://192.168.0.50:8000/control/PAUSE/${label}`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                    });
+                  }
+                }
+              }
+              >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-pause active:scale-95" 
+              >
+                <rect x="14" y="3" width="5" height="18" rx="1" />
+                <rect x="5" y="3" width="5" height="18" rx="1" />
+              </svg>
+            </div>
+          )
+        }
+
+        {/* Resume */}
+        {state === "PAUSED" && 
+          (
+            <div className='disabled py-2 px-2 hover:bg-[#51a2ff]/30' 
+              onClick={
+                async () => {
+                  if(status.state === "running"){
+                    await fetch(`http://192.168.0.50:8000/control/RESUME/${label}`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                    });
+                  }
+                }
+              }
+              >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-diamond-icon lucide-diamond"
+              >
+                <path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z" />
+              </svg>
+            </div>
+          )
+        }        
 
         {/* Stop */}
-        <div className='disabled py-2 pl-2 pr-2 hover:bg-[#eb3a13]/30 rounded-r cursor-not-allowed'>
+        <div className='disabled py-2 pl-2 pr-2 hover:bg-[#eb3a13]/30 rounded-r '
+          onClick={
+            async () => {
+              if(status.state === "running"){
+                setStarting(false);
+
+                await fetch(`http://192.168.0.50:8000/control/STOP/${label}`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                });
+              }
+            }
+          }>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"
@@ -266,8 +328,18 @@ const Panel = ({ label }) => {
           </svg>
         </div>
 
-        {/* Fast Forward */}
-        <div className='disabled py-2 pl-2 pr-2 hover:bg-[#51a2ff]/30 rounded-r cursor-not-allowed'>
+        {/* Skip */}
+        <div className='disabled py-2 pl-2 pr-2 hover:bg-[#51a2ff]/30 rounded-r '
+          onClick={
+            async () => {
+              if(status.state === "running"){
+                await fetch(`http://192.168.0.50:8000/control/SKIP/${label}`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                });
+              }
+            }
+          }>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width={16}
