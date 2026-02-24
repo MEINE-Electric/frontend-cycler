@@ -58,8 +58,8 @@ const UnplugIcon = () => (
     height={48}
     viewBox="0 0 24 24"
     fill="none"
-    stroke="#acada3"
-    strokeWidth={1}
+    stroke="#555555"
+    strokeWidth={1.2}
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -77,37 +77,39 @@ const Panel = ({ label }) => {
   const state = channel["state"]
   const data = channel["data"]
   const status = channel["status"]
+
+  const [prev_state, setPrevState] = useState(null);
   
   const curr_voltage =
-    state === "CHARGING"
+    (state === "CHARGING" || (state === "PAUSED" && prev_state === "CHARGING"))
       ? data["psu_voltage_actual"]
-      : (state === "DISCHARGING" || state === "HOLD")
-        ? data["load_voltage_actual"]
+      : ((state === "DISCHARGING" || (state === "PAUSED" && prev_state === "DISCHARGING")) || (state === "HOLD" || (state === "PAUSED" && prev_state === "HOLD")))
+        ? data["load_voltage_actual"] 
         : state === "IDLE" || state === "DISCONNECTED" 
             ? 0
-              : "...";
-
+              : "...";    
+  
   const thresh_voltage = 
-    state === "CHARGING" ? data["vmax"]
-      : state === "DISCHARGING" ? data["vmin"]
-        : state === "HOLD" ? data["hold_threshold"]
-          : state === "IDLE" || state === "DISCONNECTED" ? 0
+    (state === "CHARGING" || (state === "PAUSED" && prev_state === "CHARGING")) ? data["vmax"]
+      : (state === "DISCHARGING" || (state === "PAUSED" && prev_state === "DISCHARGING")) ? data["vmin"]
+        : (state === "HOLD" || (state === "PAUSED" && prev_state === "HOLD")) ? data["hold_threshold"]
+          : (state === "IDLE" || state === "DISCONNECTED") ? 0
               : "...";
 
   const voltage_progress =
     (state === "IDLE" || state === "DISCONNECTED" || state === "REST") ? 0
-      : (state === "CHARGING") ? Math.min(100, Math.round((curr_voltage / thresh_voltage) * 100))
-        : (state === "DISCHARGING") ? Math.min(100, Math.round(((thresh_voltage) / curr_voltage) * 100))
+      : (state === "CHARGING" || (state === "PAUSED" && prev_state === "CHARGING")) ? Math.min(100, Math.round((curr_voltage / thresh_voltage) * 100))
+        : (state === "DISCHARGING"  || (state === "PAUSED" && prev_state === "DISCHARGING")) ? Math.min(100, Math.round(((thresh_voltage) / curr_voltage) * 100))
           : 0 
 
   const elapsed_time = data["current_time"]
-  const time_limit =  (state === "CHARGING") 
+  const time_limit =  (state === "CHARGING"  || (state === "PAUSED" && prev_state === "CHARGING")) 
                         ? data["charge_time_limit"]
-                        : (state === "DISCHARGING") 
+                        : (state === "DISCHARGING" || (state === "PAUSED" && prev_state === "DISCHARGING")) 
                           ? data["discharge_time_limit"]
-                          : (state === "HOLD") 
+                          : (state === "HOLD" || (state === "PAUSED" && prev_state === "HOLD")) 
                             ? data["hold_time_limit"]
-                            : (state === "REST")
+                            : (state === "REST"  || (state === "PAUSED" && prev_state === "REST"))
                             ? data["rest_time_limit"]
                               : 0
   
@@ -121,20 +123,28 @@ const Panel = ({ label }) => {
                               : "00.00.00"
                            
   const [open, setOpen] = useState(false);                          
-  const [starting, setStarting] = useState(false);
+  const [action, setAction] = useState(false);
 
   useEffect(() => {
-    if (starting && (state === "CHARGING" || state === "DISCHARGING" || state === "HOLD" || state === "REST" || state === "PAUSED") ) {
-      setStarting(false);
+    if (!action) return;
+
+    if (
+      (action === "Starting" && state !== "IDLE") ||
+      (action === "Pausing" && state === "PAUSED") ||
+      (action === "Resuming" && state !== "PAUSED") ||
+      (action === "Stopping" && state === "IDLE") ||
+      (action === "Skipping")
+    ) {
+      setAction(false);
     }
-  }, [state, starting]);
+  }, [state]);
   
 
   if (state === "DISCONNECTED" || state === undefined) {
     return (
       <div className="bg-surface rounded-xl flex items-center justify-center aspect-square transition-all duration-100 ease-in-out">
         <span className="text-muted font-bold">
-            Disconnected
+            <UnplugIcon className="w-6 h-6" />
         </span>
       </div>
         )
@@ -205,7 +215,7 @@ const Panel = ({ label }) => {
         onClick={
           async () => {
             if(status.state != "running"){
-              setStarting(true);
+              setAction("Starting");
 
               await fetch(`http://192.168.0.50:8000/start/${label}`, {
                 method: "POST",
@@ -238,10 +248,15 @@ const Panel = ({ label }) => {
               onClick={
                 async () => {
                   if(status.state === "running"){
+
+                    setAction("Pausing");
+
                     await fetch(`http://192.168.0.50:8000/control/PAUSE/${label}`, {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                     });
+
+                  setPrevState(state);
                   }
                 }
               }
@@ -268,14 +283,19 @@ const Panel = ({ label }) => {
         {/* Resume */}
         {state === "PAUSED" && 
           (
-            <div className='disabled py-2 px-2 hover:bg-[#51a2ff]/30' 
+            <div className='disabled py-2 px-2 hover:bg-[#FFA726]/30' 
               onClick={
                 async () => {
                   if(status.state === "running"){
+
+                    setAction("Resuming");
+
                     await fetch(`http://192.168.0.50:8000/control/RESUME/${label}`, {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                     });
+
+                    setPrevState(null);
                   }
                 }
               }
@@ -286,7 +306,7 @@ const Panel = ({ label }) => {
                 height="16"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#ffffff"
+                stroke="#FFA726"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -303,7 +323,7 @@ const Panel = ({ label }) => {
           onClick={
             async () => {
               if(status.state === "running"){
-                setStarting(false);
+                setAction("Stopping");
 
                 await fetch(`http://192.168.0.50:8000/control/STOP/${label}`, {
                   method: "POST",
@@ -333,6 +353,8 @@ const Panel = ({ label }) => {
           onClick={
             async () => {
               if(status.state === "running"){
+                setAction("Skipping");
+
                 await fetch(`http://192.168.0.50:8000/control/SKIP/${label}`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -377,14 +399,21 @@ const Panel = ({ label }) => {
         </svg>
       </div>
 
-      {starting && (
+      {action && (
         <div className="absolute inset-0 z-50 bg-background/70 backdrop-blur-sm flex items-center justify-center rounded-xl transition-all ease-in-out duration-100">
           <div className="flex flex-col items-center gap-3">
             <div className="relative h-8 w-8">
               <div className="absolute inset-0 border-4 border-foreground border-t-transparent rounded-full animate-spin" />
             </div>
             <span className="text-sm font-medium text-foreground/80">
-              Preparing experiment...
+              {
+                action === "Starting" ? "Preparing Experiment..."
+                  : action === "Stopping" ? "Stopping Experiment..."
+                    : action === "Pausing" ? "Pausing Experiment..."
+                      : action === "Resuming" ? "Resuming Experiment..."
+                        : action === "Skipping" ? "Skipping Step..."
+                          : ""
+              }
             </span>
           </div>
         </div>
