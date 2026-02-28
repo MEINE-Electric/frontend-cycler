@@ -108,7 +108,9 @@ const Row = ({ count, data, highlight, channel, onChange }) => {
               text-muted text-xs font-medium absolute top-1/2 -translate-y-1/2 right-7`}
             >
               {/* {status.goto ? status.goto[count*2 + 1] : ""}    */}
-              {data.action === "GOTO" ? status["goto"][(count)*2 - 1] : ""}           
+              {data.action === "GOTO"
+                ? status?.goto?.[(count * 2) - 1] ?? ""
+                : ""}     
             </div>
         </div>
 
