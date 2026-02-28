@@ -18,6 +18,8 @@ const Grid = () => {
       <Panel label={32} />      
       <Panel label={41} />
       <Panel label={42} />
+      <Panel label={51} />
+      <Panel label={52} />
       
     </div>
   )

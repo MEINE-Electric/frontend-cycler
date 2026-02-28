@@ -57,7 +57,10 @@ const Dropdown = ({ options, value, onSelect }) => {
   );
 };
 
-const Row = ({ count, data, highlight, onChange }) => {
+const Row = ({ count, data, highlight, channel, onChange }) => {
+
+  const status = channel["status"]
+
   return (
     <div className={`grid grid-cols-7 gap-2 py-1 items-center text-center mx-2 ${highlight ? 'bg-accent-info/40 py-2 rounded-lg' : ''}`}>
         <div className='text-xs font-semibold'>{count-1}</div>
@@ -94,12 +97,19 @@ const Row = ({ count, data, highlight, onChange }) => {
             />
         </div>
 
-        <div>
+        <div className='relative'>
             <input
                 value={data.repeat}
                 onChange={(e) => onChange('repeat', e.target.value)}
                 className="border-b text-center border-accent/25 w-16 outline-none"
             />
+            <div
+              className={`${data.action === "GOTO" ? "" : "hidden"} 
+              text-muted text-xs font-medium absolute top-1/2 -translate-y-1/2 right-7`}
+            >
+              {/* {status.goto ? status.goto[count*2 + 1] : ""}    */}
+              {data.action === "GOTO" ? status["goto"][(count)*2 - 1] : ""}           
+            </div>
         </div>
 
         <div>
@@ -118,7 +128,10 @@ const Experiment = ({ onClose, label }) => {
   const [root, setRoot] = useState(null)
   const channel = useChannelStore((s) => s.channels[label])
   const status = channel["status"]
-  const row_number = parseInt(status["step"])/2
+  const row_number = parseInt(status["step"]) / 2
+
+  const [page, setPage] = useState("experiment")
+  const [name, setName] = useState("")
 
   // 8 controlled rows
   const [rows, setRows] = useState([
@@ -234,6 +247,20 @@ const Experiment = ({ onClose, label }) => {
       } else if (r.action === "GOTO") {
 
         command.push({
+          command: "CONFIG",
+          config_updates: {
+            psu_voltage_set: 0.0,
+            psu_current_set: 0.0,
+            psu_ovp_limit: 20.0,
+            psu_ocp_limit: 20.0,
+            load_current_set: 0.0,
+            load_voltage_set: 0.0,
+            load_channel: String(label)[1],
+            load_mode: "CURR"
+          },
+        })
+
+        command.push({
           command: "GOTO",
           target: parseInt(r.target),
           repeat: parseInt(r.repeat)
@@ -281,72 +308,104 @@ const Experiment = ({ onClose, label }) => {
       className="fixed inset-0 z-1000 bg-black/40 flex items-center justify-center text-white"
       onClick={onClose}
     >
-      <div className="w-5xl bg-surface rounded-xl p-8 relative" onClick={(e) => e.stopPropagation()}>
+      { page === "experiment" && 
+        (
+          <div className="w-5xl aspect-video bg-surface rounded-xl p-8 relative" onClick={(e) => e.stopPropagation()}>
 
-        <div className="cursor-pointer absolute top-5 right-5 text-xs active:scale-95 ease-in-out hover:font-semibold" onClick={() => onClose()}>Close</div>
-        <h2 className="mb-8 font-semibold">Experiment Builder</h2>
-        
-        {/* Header */}
-        <div className='mx-2 grid grid-cols-7 text-xs text-accent/55 font-semibold mb-6 text-center'>
-          <div>Sr. No.</div>
-          <div>Action</div>
-          <div>Voltage (V)</div>
-          <div>Current (A)</div>
-          <div>Time Limit (Secs)</div>
-          <div>Repeat</div>
-          <div>Target</div>
-        </div>
+            <div className="cursor-pointer absolute top-5 right-5 text-xs active:scale-95 ease-in-out hover:font-semibold" onClick={() => onClose()}>Close</div>
+            <h2 className="mb-8 font-semibold">Experiment Builder</h2>
+            
+            {/* Header */}
+            <div className='mx-2 grid grid-cols-7 text-xs text-accent/55 font-semibold mb-6 text-center'>
+              <div>Sr. No.</div>
+              <div>Action</div>
+              <div>Voltage (V)</div>
+              <div>Current (A)</div>
+              <div>Time Limit (Secs)</div>
+              <div>Repeat</div>
+              <div>Target</div>
+            </div>
 
-        {/* Rows */}
-        <div className='space-y-4 overflow-y-scroll h-96 webkit-scrollbar-thumb'>
-          {rows.map((row, i) => (
-                <Row
-                  key={i}
-                  count={i + 1}
-                  highlight={row_number === i+1}
-                  data={row}
-                  onChange={(field, value) => {
-                          setRows(r => {
-                          const copy = [...r]
-                          copy[i][field] = value
-                          return copy
-                      })
-                  }}
-                />
-          ))}
+            {/* Rows */}
+            <div className='space-y-4 overflow-y-scroll h-96 webkit-scrollbar-thumb'>
+              {rows.map((row, i) => (
+                    <Row
+                      key={i}
+                      count={i + 1}
+                      highlight={row_number === i+1}
+                      data={row}
+                      channel={channel}
+                      onChange={(field, value) => {
+                              setRows(r => {
+                              const copy = [...r]
+                              copy[i][field] = value
+                              return copy
+                          })
+                      }}
+                    />
+              ))}
 
-          {console.log(row_number)}
-        </div>
+            </div>
 
-        {/* Submit */}
-        <div className='flex justify-end mt-10'>
-          <button
-            onClick={
-              async () => {
-                if(status.state != "running"){
-                  const commands = create_JSON(rows, label)
-                  const bdy = {
-                    "rows": rows,
-                    "commands": commands
-                  }
+            {/* Move to Next */}
+            <div className='flex justify-end mt-10'>
+              <button
+                onClick={() => setPage("tags")}
+                className={` px-6 py-2 text-surface rounded-lg text-xs font-semibold ${status.state != "running" ? "transition-all duration-200 ease-in-out bg-foreground active:scale-97 active:bg-accent cursor-pointer" : "bg-accent cursor-not-allowed"}`}
+              >
+                Next
+              </button>
+            </div>
+          </div> 
+        )
+      }
 
-                  await fetch(`http://192.168.0.50:8000/set/${label}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(bdy)
-                  })
+      {
+        page === "tags" && (
+          <div className="w-5xl aspect-video bg-surface rounded-xl p-8 relative flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="cursor-pointer absolute top-5 right-5 text-xs active:scale-95 ease-in-out hover:font-semibold" onClick={() => onClose()}>Close</div>
+            <h2 className="mb-8 font-semibold">Experiment Specific</h2>
+            <div className='flex flex-col mb-6'>
+              <div className='text-xs text-accent/55 font-semibold mb-2'>
+                Experiment Name
+              </div>
+              <input className='border-b border-accent/25 bg-transparent outline-none py-1 pr-2' placeholder='Enter experiment name...' value={name} onChange={(e) => setName(e.target.value)} disabled={status.state === "running"}>
+              </input>
+            </div>
+            <div className='flex-1'>
+            </div>
+            <div className='flex justify-end mt-10'>
+              <button
+                onClick={async () => {
+                      if(status.state != "running"){
+                        const commands = create_JSON(rows, label)
+                        const bdy = {
+                          "rows": rows,
+                          "commands": commands,
+                          "experiment": name
+                        }
 
-                  onClose()
-                }
-              }
-            }
-            className={` px-6 py-2 text-surface rounded-lg text-xs font-semibold ${status.state != "running" ? "transition-all duration-200 ease-in-out bg-foreground active:scale-97 active:bg-accent cursor-pointer" : "bg-accent cursor-not-allowed"}`}
-          >
-            Submit
-          </button>
-        </div>
-      </div>
-      
+                        await fetch(`http://192.168.0.50:8000/set/${label}`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(bdy)
+                        })
+
+                        onClose()
+                      }
+                    }}
+                className={`px-6 py-2 text-surface rounded-lg text-xs font-semibold ${
+                  status.state !== "running" && name.trim() !== ""
+                    ? "transition-all duration-200 ease-in-out bg-foreground active:scale-97 active:bg-accent cursor-pointer"
+                    : "bg-accent cursor-not-allowed"
+                }`}
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        ) 
+      }
     </div>,
     root
   )

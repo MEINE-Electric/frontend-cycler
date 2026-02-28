@@ -205,8 +205,6 @@ const Panel = ({ label }) => {
           </div>
       </div>
 
-      {open && <Experiment onClose={() => setOpen(false)} label={label}/>}
-
       {/* Control Panel */}
       <div className='bg-surface/30 backdrop-blur-2xl absolute top-3 right-1/2 translate-x-1/2 z-100 rounded-lg flex flex-row opacity-0 border-foreground/400 border overflow-hidden group-hover:opacity-100 transition-all duration-100 ease-out'>
         
@@ -398,6 +396,8 @@ const Panel = ({ label }) => {
           <path d="M18 15 L12 9 L6 15" />
         </svg>
       </div>
+
+      {open && <Experiment onClose={() => setOpen(false)} label={label}/>}
 
       {action && (
         <div className="absolute inset-0 z-50 bg-background/70 backdrop-blur-sm flex items-center justify-center rounded-xl transition-all ease-in-out duration-100">
